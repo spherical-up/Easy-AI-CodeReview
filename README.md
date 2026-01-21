@@ -233,6 +233,18 @@ python ui_server.py
 
 #### GitHub Webhook 配置
 
+**可选：OAuth 自动配置（网页端）**
+
+- 在 `.env` 中配置 GitHub OAuth 与 webhook 回调：
+  ```bash
+  GITHUB_OAUTH_CLIENT_ID=your_github_oauth_client_id
+  GITHUB_OAUTH_CLIENT_SECRET=your_github_oauth_client_secret
+  GITHUB_OAUTH_CALLBACK_URL=https://your-domain.com/oauth/github/callback
+  REVIEW_WEBHOOK_URL=https://your-domain.com/review/webhook
+  ```
+- 启动 `ui_server.py` 后，在网页端输入仓库地址并授权，系统会自动创建或更新 webhook。
+- 如需在网页端保存 OAuth 配置，设置 `ADMIN_SETUP_PASSWORD` 后可在“管理员配置”中填写。
+
 **1. 创建Access Token**
 
 在 GitHub 个人设置中，创建一个 Personal Access Token，需要 `repo` 权限。

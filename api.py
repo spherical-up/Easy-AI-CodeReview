@@ -16,6 +16,7 @@ from flask import Flask, request, jsonify, send_from_directory
 import os
 
 from src.gitlab.webhook_handler import slugify_url
+from src.service.github_oauth_service import GitHubOAuthTokenStore
 from src.queue.worker import handle_merge_request_event, handle_push_event, handle_github_pull_request_event, \
     handle_github_push_event, handle_gitea_push_event, handle_gitea_pull_request_event
 from src.service.review_service import ReviewService
@@ -307,7 +308,10 @@ def handle_webhook():
 
 def handle_github_webhook(event_type, data):
     # 获取GitHub配置
+    repo_full_name = data.get('repository', {}).get('full_name')
     github_token = os.getenv('GITHUB_ACCESS_TOKEN') or request.headers.get('X-GitHub-Token')
+    if not github_token and repo_full_name:
+        github_token = GitHubOAuthTokenStore().get_token(repo_full_name)
     if not github_token:
         return jsonify({'message': 'Missing GitHub access token'}), 400
 

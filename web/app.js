@@ -5,6 +5,8 @@ let currentReviewType = 'mr';
 
 // 初始化
 document.addEventListener('DOMContentLoaded', function() {
+    initOauthForm();
+
     // 设置默认日期
     const today = new Date();
     const sevenDaysAgo = new Date(today);
@@ -39,6 +41,91 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(updateLastUpdateTime, 30000);
     updateLastUpdateTime();
 });
+
+function initOauthForm() {
+    const form = document.getElementById('githubOauthForm');
+    const repoInput = document.getElementById('repoUrlInput');
+    const statusEl = document.getElementById('oauthStatus');
+    const adminToggle = document.getElementById('toggleAdminConfig');
+    const adminForm = document.getElementById('adminOauthForm');
+    const adminStatus = document.getElementById('adminOauthStatus');
+    if (form && repoInput) {
+        form.addEventListener('submit', function(event) {
+            repoInput.value = repoInput.value.trim();
+            if (!repoInput.value) {
+                event.preventDefault();
+                if (statusEl) {
+                    statusEl.textContent = '请输入仓库地址，例如 https://github.com/owner/repo';
+                    statusEl.className = 'text-sm mt-3 text-red-600';
+                    statusEl.classList.remove('hidden');
+                }
+            }
+        });
+    }
+    if (adminToggle && adminForm) {
+        adminToggle.addEventListener('click', function() {
+            adminForm.classList.toggle('hidden');
+        });
+    }
+    if (adminForm) {
+        adminForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const payload = {
+                client_id: (document.getElementById('adminClientId').value || '').trim(),
+                client_secret: (document.getElementById('adminClientSecret').value || '').trim(),
+                callback_url: (document.getElementById('adminCallbackUrl').value || '').trim(),
+                webhook_url: (document.getElementById('adminWebhookUrl').value || '').trim(),
+                admin_password: (document.getElementById('adminPassword').value || '').trim()
+            };
+            if (!payload.client_id || !payload.client_secret || !payload.admin_password) {
+                if (adminStatus) {
+                    adminStatus.textContent = '请填写 Client ID、Client Secret 和管理员口令';
+                    adminStatus.className = 'text-sm text-red-600';
+                    adminStatus.classList.remove('hidden');
+                }
+                return;
+            }
+            try {
+                const response = await fetch('/api/admin/oauth-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    throw new Error('保存失败');
+                }
+                if (adminStatus) {
+                    adminStatus.textContent = '配置已保存';
+                    adminStatus.className = 'text-sm text-green-600';
+                    adminStatus.classList.remove('hidden');
+                }
+                document.getElementById('adminClientSecret').value = '';
+                document.getElementById('adminPassword').value = '';
+            } catch (error) {
+                if (adminStatus) {
+                    adminStatus.textContent = '保存失败，请检查管理员口令';
+                    adminStatus.className = 'text-sm text-red-600';
+                    adminStatus.classList.remove('hidden');
+                }
+            }
+        });
+    }
+    const params = new URLSearchParams(window.location.search);
+    const oauthStatus = params.get('oauth');
+    if (statusEl && oauthStatus) {
+        if (oauthStatus === 'success') {
+            const repo = params.get('repo') || '';
+            const action = params.get('action') || 'ok';
+            statusEl.textContent = `授权成功，已${action} webhook：${repo}`;
+            statusEl.className = 'text-sm mt-3 text-green-600';
+        } else {
+            const message = params.get('message') || '授权失败';
+            statusEl.textContent = `授权失败：${message}`;
+            statusEl.className = 'text-sm mt-3 text-red-600';
+        }
+        statusEl.classList.remove('hidden');
+    }
+}
 
 // 格式化日期
 function formatDate(date) {
@@ -512,4 +599,3 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
-
