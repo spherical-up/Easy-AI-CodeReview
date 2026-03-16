@@ -77,7 +77,10 @@ def handle_merge_request_event(webhook_data: dict, gitlab_token: str, gitlab_url
     :return:
     '''
     merge_review_only_protected_branches = os.environ.get('MERGE_REVIEW_ONLY_PROTECTED_BRANCHES_ENABLED', '0') == '1'
-    merge_review_only_branch_name = os.environ.get('MERGE_REVIEW_ONLY_BRANCH_NAME', 'dev')  # 需要review的分支名称
+    merge_review_only_branch_name_str = os.environ.get('MERGE_REVIEW_ONLY_BRANCH_NAME', '')  # 需要review的分支名称，逗号分隔
+    merge_review_only_branch_names = [b.strip() for b in merge_review_only_branch_name_str.split(',') if b.strip()] if merge_review_only_branch_name_str else []
+
+
     try:
         # 解析Webhook数据
         handler = MergeRequestHandler(webhook_data, gitlab_token, gitlab_url)
@@ -87,7 +90,7 @@ def handle_merge_request_event(webhook_data: dict, gitlab_token: str, gitlab_url
             logger.info("Merge Request target branch not match protected branches, ignored.")
             return
         # 判断分支名称进行过滤
-        if webhook_data['object_attributes']['target_branch'] not in [merge_review_only_branch_name]:
+        if merge_review_only_branch_names and webhook_data['object_attributes']['target_branch'] not in merge_review_only_branch_names:
             logger.info(f"Merge Request Hook event, branch={webhook_data['object_attributes']['target_branch']}, ignored.")
             return
         if handler.action not in ['open', 'update']:
