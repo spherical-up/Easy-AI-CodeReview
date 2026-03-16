@@ -36,7 +36,7 @@ def on_merge_request_reviewed(mr_review_entity: MergeRequestReviewEntity):
                                webhook_data=mr_review_entity.webhook_data)
 
     # 记录到数据库
-    ReviewService().insert_mr_review_log(mr_review_entity)
+    ReviewService.insert_mr_review_log(mr_review_entity)
 
 
 def on_push_reviewed(entity: PushReviewEntity):
@@ -63,7 +63,7 @@ def on_push_reviewed(entity: PushReviewEntity):
                                webhook_data=entity.webhook_data)
 
     # 记录到数据库
-    ReviewService().insert_push_review_log(entity)
+    ReviewService.insert_push_review_log(entity)
 
 
 # 连接事件处理函数到事件信号
